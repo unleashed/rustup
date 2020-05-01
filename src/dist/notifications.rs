@@ -174,11 +174,22 @@ impl<'a> Display for Notification<'a> {
                 "removing stray hash found at '{}' in order to continue",
                 path.display()
             ),
-            SkippingNightlyMissingComponent(components) => write!(
+            SkippingNightlyMissingComponent(components) => {
+                let mut iter = components.iter();
+                let first = iter.next()
+                    .expect("received 0 missing components")
+                    .short_name_in_manifest()
+                    .to_owned();
+                write!(
                 f,
-                "skipping nightly which is missing installed component '{}'",
-                components[0].short_name_in_manifest()
-            ),
+                "skipping nightly which is missing installed component{} '{}'",
+                if components.len() > 1 { "s" } else { "" },
+                iter.fold(first, |mut result, component| {
+                        result.push_str("', '");
+                        result.push_str(component.short_name_in_manifest());
+                        result
+                    }))
+            },
             ForcingUnavailableComponent(component) => {
                 write!(f, "Force-skipping unavailable component '{}'", component)
             }
